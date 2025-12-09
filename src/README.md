@@ -1,50 +1,57 @@
-# xv7 
+# xv7
+
 Implementation of Demand Paging and Swapping in xv6 with **all test cases passing**
 
 ### Usage
 
 You can boot xv7 OS in qemu emulator:
+
 ```
 sudo apt-get install qemu
 make qemu
 ```
+
 To test demand paging :
+
 ```
 memtest1
 ```
+
 To test swapping and fork :
+
 ```
 memtest2
 ```
+
 #### Important :warning:
+
 > Replace README.MD with this [README](https://github.com/mit-pdos/xv6-public/blob/master/README) file, otherwise it won't run.
 
-### Changed files 
+### Changed files
 
-1. **bio.c** *(for swapping)*
-    * write_page_to_disk()
-    * read_page_from_disk()
-2. **fs.c** *(for swapping)*
-    * balloc_page()
-    * bfree_page()
-3. **paging.c** *(for demand paging)*
-    * map_address()
-    * swap_page()
-    * swap_page_from_pte()
-4. **vm.c** *(for demand paging)*
-    * select_a_victim()
-    * clearaccessbit()
-    * getswappedblk()
+1. **bio.c** _(for swapping)_
+   - write_page_to_disk()
+   - read_page_from_disk()
+2. **fs.c** _(for swapping)_
+   - balloc_page()
+   - bfree_page()
+3. **paging.c** _(for demand paging)_
+   - map_address()
+   - swap_page()
+   - swap_page_from_pte()
+4. **vm.c** _(for demand paging)_
+   - select_a_victim()
+   - clearaccessbit()
+   - getswappedblk()
 
 And a few minor changes at different places, all changes begin with the following comment:
-> \*\*\*\**\*\*\*\*\*\*\*xv7\*\*\*\*\*\*\*\*\*\*\*\*\*
 
+> \*\*\*\*\*\*\*\*\*\*\*\*xv7\*\*\*\*\*\*\*\*\*\*\*\*\*
 
-
-### About xv6  
+### About xv6
 
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
-Version 6 (v6).  xv6 loosely follows the structure and style of v6,
+Version 6 (v6). xv6 loosely follows the structure and style of v6,
 but is implemented for a modern x86-based multiprocessor using ANSI C.
 
 ACKNOWLEDGMENTS
@@ -55,10 +62,10 @@ to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
 provides pointers to on-line resources for v6.
 
 xv6 borrows code from the following sources:
-    JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
-    Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
-    FreeBSD (ioapic.c)
-    NetBSD (console.c)
+JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
+Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
+FreeBSD (ioapic.c)
+NetBSD (console.c)
 
 The following people have made contributions: Russ Cox (context switching,
 locking), Cliff Frey (MP), Xiao Yu (MP), Nickolai Zeldovich, and Austin
