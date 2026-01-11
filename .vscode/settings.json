@@ -5,6 +5,8 @@
     "gdbinit",
     "initcode",
     "kernelmemfs",
+    "kfree",
+    "kinit",
     "LOTTERYVM"
   ]
 }
