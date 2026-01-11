@@ -97,7 +97,10 @@ kalloc(void)
     acquire(&kmem.lock);
   r = kmem.freelist;
   if (r)
+  {
     kmem.freelist = r->next;
+    r->tickets = 10;
+  }
   if (kmem.use_lock)
     release(&kmem.lock);
   return (char *)r;
