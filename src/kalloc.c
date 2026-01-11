@@ -16,18 +16,17 @@ extern char end[]; // first address after kernel loaded from ELF file
 struct run
 {
   struct run *next;
-  // ! LOTTERYVM
-  int tickets;
 };
 
 // ! LOTTERYVM:
-// struct
-// {
-//   char *address;
-//   int tickets;
-// } core_map;
+struct
+{
+  char *address;
+  int tickets;
+  struct core_map *next;
+} core_map;
 
-// struct core_map metadata[1024*1024]; // ? Can we have an array this big? + Better Way?
+struct core_map *metadata;
 struct
 {
   struct spinlock lock;
@@ -79,7 +78,6 @@ void kfree(char *v)
     acquire(&kmem.lock);
   r = (struct run *)v;
   r->next = kmem.freelist;
-  r->tickets = 10;
   kmem.freelist = r;
   if (kmem.use_lock)
     release(&kmem.lock);
@@ -99,7 +97,12 @@ kalloc(void)
   if (r)
   {
     kmem.freelist = r->next;
-    r->tickets = 10;
+    struct core_map *md;
+    md->tickets = 10;
+
+    if (!metadata)
+    {
+    }
   }
   if (kmem.use_lock)
     release(&kmem.lock);

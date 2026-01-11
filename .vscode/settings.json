@@ -7,7 +7,9 @@
     "kernelmemfs",
     "kfree",
     "kinit",
+    "lapiceoi",
     "LOTTERYVM",
+    "pgdir",
     "PGSIZE"
   ]
 }
