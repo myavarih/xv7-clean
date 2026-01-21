@@ -176,6 +176,7 @@ UPROGS=\
 	_memtest1\
 	_memtest2\
 	_memtest3\
+	_lotterytest\
 	_wc\
 	_zombie\
 
