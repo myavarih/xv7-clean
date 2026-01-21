@@ -22,6 +22,7 @@ struct run
 #define NPHYS_PAGES (PHYSTOP / PGSIZE)
 struct core_map metadata[NPHYS_PAGES];
 static uint alloc_seq;
+int total_page_faults;
 
 // ! end LOTTERYVM
 struct

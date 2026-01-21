@@ -76,6 +76,7 @@ struct core_map
   uint alloc_seq;
 };
 extern struct core_map metadata[];
+extern int total_page_faults;
 // ! end LOTTERYVM
 
 // kbd.c

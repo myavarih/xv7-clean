@@ -489,7 +489,6 @@ int sys_pipe(void)
   return 0;
 }
 
-// TODO: check if this is the right syscall and use it in lottery_test.c
 /* returns the number of swapped pages
  */
 int sys_bstat(void)
@@ -520,6 +519,8 @@ int sys_swap(void)
   return 0;
 }
 
-// TODO: add a syscall here (and signatures and stuff elsewhere) to return the total page faults + add a counter in kalloc
-
-// TODO: see which syscall works
+// return the total page faults since boot.
+int sys_get_faults(void)
+{
+  return total_page_faults;
+}

@@ -323,13 +323,6 @@ ii) if (i) is unable to find any such page, randomly reset access bit
     of 10% of the allocated pages and call select_a_victim() again
 */
 
-// TODO: for each page, we should generate a weight based on ticket counts (we access by reaching the metadata list of core_maps)
-// TODO: the weight formula is C(a big number) / Ti (control divide by zero risk)
-// TODO: then we need a random number generator, we should look up how random numbers are generated and implement a simple enough approach
-// TODO: at last a random number will choose the victim (by looping through them and R <= 0 stuff)
-// TODO: first ensure the current Implementation is FIFO and right
-// TODO: in update_tickets() print DEBUGs (status of the first 10 or more pages) (can be done while looping through them)
-// TODO: or have a keyboard shortcut to do so (don't know how)
 #define LOTTERY_WEIGHT_SCALE 100000
 
 static uint lottery_state;

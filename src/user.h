@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 int bstat(void);
 int swap(void*);
+int get_faults(void);
 
 // ulib.c
 int stat(char*, struct stat*);

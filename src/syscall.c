@@ -105,6 +105,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_bstat(void);
 extern int sys_swap(void);
+extern int sys_get_faults(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -130,6 +131,7 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_bstat]   sys_bstat,
 [SYS_swap]    sys_swap,
+[SYS_get_faults] sys_get_faults,
 };
 
 void

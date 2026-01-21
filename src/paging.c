@@ -171,6 +171,8 @@ void handle_pgfault()
   unsigned addr;
   struct proc *curproc = myprocXV7();
 
+  total_page_faults++;
+
   asm volatile("movl %%cr2, %0 \n\t" : "=r"(addr));
   addr &= ~0xfff;
 
