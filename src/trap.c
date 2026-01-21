@@ -32,6 +32,8 @@ void idtinit(void)
 }
 
 // ! LOTTERYVM:
+#define TICKET_DEBUG 1
+
 static void
 update_tickets(pde_t *pgdir)
 {
@@ -39,6 +41,8 @@ update_tickets(pde_t *pgdir)
   uint pa;
   uint idx;
   int tickets;
+  int accessed;
+  int printed = 0;
 
   for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE)
   {
@@ -54,7 +58,8 @@ update_tickets(pde_t *pgdir)
     idx = pa / PGSIZE;
 
     tickets = metadata[idx].tickets;
-    if (*pte & PTE_A)
+    accessed = ((*pte & PTE_A) != 0);
+    if (accessed)
     {
       tickets += 10;
       if (tickets > 500)
@@ -67,6 +72,11 @@ update_tickets(pde_t *pgdir)
         tickets = 10;
     }
     metadata[idx].tickets = tickets;
+    if (TICKET_DEBUG && printed < 10)
+    {
+      cprintf("page 0x%x : tickets=%d, accessed=%d\n", va, tickets, accessed);
+      printed++;
+    }
     *pte &= ~PTE_A;
   }
 

@@ -314,10 +314,8 @@ void freevm(pde_t *pgdir)
   kfree((char *)pgdir);
 }
 
-// Select a page-table entry which is mapped
-// but not accessed. Notice that the user memory
+// Select a page-table entry for eviction. Notice that the user memory
 // is mapped between 0...KERNBASE.
-// FIFO: pick the oldest allocated resident user page using metadata.alloc_seq.
 
 /* ********xv7*************
 i) in the kmem.freelist, find a page whose access bit is not setting
@@ -332,6 +330,21 @@ ii) if (i) is unable to find any such page, randomly reset access bit
 // TODO: first ensure the current Implementation is FIFO and right
 // TODO: in update_tickets() print DEBUGs (status of the first 10 or more pages) (can be done while looping through them)
 // TODO: or have a keyboard shortcut to do so (don't know how)
+#define LOTTERY_WEIGHT_SCALE 100000
+
+static uint lottery_state;
+
+static uint
+lottery_rand(uint max)
+{
+  if (max == 0)
+    return 0;
+  if (lottery_state == 0)
+    lottery_state = ticks;
+  lottery_state = lottery_state * 1103515245 + 12345;
+  return lottery_state % max;
+}
+
 pte_t *
 select_a_victim(pde_t *pgdir)
 {
@@ -368,6 +381,7 @@ select_a_victim(pde_t *pgdir)
   // ! end Existing Second Chance
 
   // ! FIFO:
+  /*
   pte_t *pte;
   pte_t *victim = 0;
   uint oldest_seq = 0;
@@ -397,7 +411,64 @@ select_a_victim(pde_t *pgdir)
   }
 
   return victim;
+  */
   // ! end FIFO
+
+  pte_t *pte;
+  uint pa;
+  uint idx;
+  uint tickets;
+  uint weight;
+  uint total_weight = 0;
+  uint draw;
+
+  for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE)
+  {
+    pte = walkpgdir(pgdir, (char *)va, 0);
+    if (pte == 0)
+      continue;
+    if ((*pte & PTE_P) == 0 || (*pte & PTE_SWAPPED))
+      continue;
+    pa = PTE_ADDR(*pte);
+    if (pa >= PHYSTOP)
+      continue;
+    idx = pa / PGSIZE;
+    tickets = metadata[idx].tickets;
+    if (tickets < 10)
+      tickets = 10;
+    weight = LOTTERY_WEIGHT_SCALE / tickets;
+    if (weight == 0)
+      weight = 1;
+    total_weight += weight;
+  }
+
+  if (total_weight == 0)
+    return 0;
+
+  draw = lottery_rand(total_weight);
+  for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE)
+  {
+    pte = walkpgdir(pgdir, (char *)va, 0);
+    if (pte == 0)
+      continue;
+    if ((*pte & PTE_P) == 0 || (*pte & PTE_SWAPPED))
+      continue;
+    pa = PTE_ADDR(*pte);
+    if (pa >= PHYSTOP)
+      continue;
+    idx = pa / PGSIZE;
+    tickets = metadata[idx].tickets;
+    if (tickets < 10)
+      tickets = 10;
+    weight = LOTTERY_WEIGHT_SCALE / tickets;
+    if (weight == 0)
+      weight = 1;
+    if (draw < weight)
+      return pte;
+    draw -= weight;
+  }
+
+  return 0;
 }
 
 // Clear access bit of a random pte.
