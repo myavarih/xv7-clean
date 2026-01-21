@@ -31,7 +31,48 @@ void idtinit(void)
   lidt(idt, sizeof(idt));
 }
 
-// ! LOTTERYVM
+// ! LOTTERYVM:
+static void
+update_tickets(pde_t *pgdir)
+{
+  pte_t *pte;
+  uint pa;
+  uint idx;
+  int tickets;
+
+  for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE)
+  {
+    pte = uva2pte(pgdir, va);
+    if (pte == 0)
+      continue;
+    if (!(*pte & PTE_P) || (*pte & PTE_SWAPPED))
+      continue;
+
+    pa = PTE_ADDR(*pte);
+    if (pa >= PHYSTOP)
+      continue;
+    idx = pa / PGSIZE;
+
+    tickets = metadata[idx].tickets;
+    if (*pte & PTE_A)
+    {
+      tickets += 10;
+      if (tickets > 500)
+        tickets = 500;
+    }
+    else
+    {
+      tickets -= 5;
+      if (tickets < 10)
+        tickets = 10;
+    }
+    metadata[idx].tickets = tickets;
+    *pte &= ~PTE_A;
+  }
+
+  lcr3(V2P(pgdir)); // TLB flush
+}
+// ! end LOTTERYVM
 
 // PAGEBREAK: 41
 void trap(struct trapframe *tf)
@@ -112,6 +153,11 @@ void trap(struct trapframe *tf)
   if (myproc() && myproc()->state == RUNNING &&
       tf->trapno == T_IRQ0 + IRQ_TIMER)
     yield();
+
+  // ! LOTTERYVM:
+  if (myproc() && myproc()->pgdir)
+    update_tickets(myproc()->pgdir);
+  // ! end LOTTERYVM
 
   // Check if the process has been killed since we yielded
   if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER)

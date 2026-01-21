@@ -2,7 +2,7 @@
 #define PAGING_H
 
 void handle_pgfault();
-pte_t* select_a_victim(pde_t *pgdir);
+pte_t *select_a_victim(pde_t *pgdir);
 void clearaccessbit(pde_t *pgdir);
 int getswappedblk(pde_t *pgdir, uint va);
 int swap_page(pde_t *pgdir);

@@ -19,14 +19,11 @@ struct run
 };
 
 // ! LOTTERYVM:
-struct
-{
-  char *address;
-  int tickets;
-  struct core_map *next;
-} core_map;
+#define NPHYS_PAGES (PHYSTOP / PGSIZE)
+struct core_map metadata[NPHYS_PAGES];
+static uint alloc_seq;
 
-struct core_map *metadata;
+// ! end LOTTERYVM
 struct
 {
   struct spinlock lock;
@@ -67,6 +64,7 @@ void freerange(void *vstart, void *vend)
 void kfree(char *v)
 {
   struct run *r;
+  uint idx;
 
   if ((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree in kalloc.c");
@@ -76,6 +74,9 @@ void kfree(char *v)
 
   if (kmem.use_lock)
     acquire(&kmem.lock);
+  idx = V2P(v) / PGSIZE;
+  metadata[idx].tickets = 0;
+  metadata[idx].alloc_seq = 0;
   r = (struct run *)v;
   r->next = kmem.freelist;
   kmem.freelist = r;
@@ -90,6 +91,7 @@ char *
 kalloc(void)
 {
   struct run *r;
+  uint idx;
 
   if (kmem.use_lock)
     acquire(&kmem.lock);
@@ -97,12 +99,10 @@ kalloc(void)
   if (r)
   {
     kmem.freelist = r->next;
-    struct core_map *md;
-    md->tickets = 10;
-
-    if (!metadata)
-    {
-    }
+    idx = V2P(r) / PGSIZE;
+    metadata[idx].tickets = 10; // ! LOTTERYVM
+    alloc_seq++;
+    metadata[idx].alloc_seq = alloc_seq;
   }
   if (kmem.use_lock)
     release(&kmem.lock);

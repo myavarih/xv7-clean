@@ -10,6 +10,7 @@
     "lapiceoi",
     "LOTTERYVM",
     "pgdir",
-    "PGSIZE"
+    "PGSIZE",
+    "walkpgdir"
   ]
 }
