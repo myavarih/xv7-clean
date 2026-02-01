@@ -33,18 +33,25 @@ void idtinit(void)
 
 // ! LOTTERYVM:
 #define TICKET_DEBUG 1
+#define TICKET_UPDATE_TICKS 1
 
 static void
-update_tickets(pde_t *pgdir)
+update_tickets(struct proc *p)
 {
   pte_t *pte;
+  pde_t *pgdir;
   uint pa;
   uint idx;
   int tickets;
   int accessed;
   int printed = 0;
+  int cleared = 0;
 
-  for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE)
+  if (p == 0 || p->pgdir == 0 || p->sz == 0)
+    return;
+
+  pgdir = p->pgdir;
+  for (uint va = 0; va < p->sz; va += PGSIZE)
   {
     pte = uva2pte(pgdir, va);
     if (pte == 0)
@@ -78,9 +85,11 @@ update_tickets(pde_t *pgdir)
       printed++;
     }
     *pte &= ~PTE_A;
+    cleared = 1;
   }
 
-  lcr3(V2P(pgdir)); // TLB flush
+  if (cleared)
+    lcr3(V2P(pgdir)); // TLB flush
 }
 // ! end LOTTERYVM
 
@@ -106,10 +115,25 @@ void trap(struct trapframe *tf)
   case T_IRQ0 + IRQ_TIMER:
     if (cpuid() == 0)
     {
+      static uint last_update_ticks;
+      uint t;
+
       acquire(&tickslock);
       ticks++;
       wakeup(&ticks);
+      t = ticks;
       release(&tickslock);
+
+      // ! LOTTERYVM:
+      if (myproc() && myproc()->pgdir && myproc()->sz > 0)
+      {
+        if (t - last_update_ticks >= TICKET_UPDATE_TICKS)
+        {
+          last_update_ticks = t;
+          update_tickets(myproc());
+        }
+      }
+      // ! end LOTTERYVM
     }
     lapiceoi();
     break;
@@ -163,11 +187,6 @@ void trap(struct trapframe *tf)
   if (myproc() && myproc()->state == RUNNING &&
       tf->trapno == T_IRQ0 + IRQ_TIMER)
     yield();
-
-  // ! LOTTERYVM:
-  if (myproc() && myproc()->pgdir)
-    update_tickets(myproc()->pgdir);
-  // ! end LOTTERYVM
 
   // Check if the process has been killed since we yielded
   if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER)
