@@ -32,11 +32,11 @@ void idtinit(void)
 }
 
 // ! LOTTERYVM:
-#define TICKET_DEBUG 1
-#define TICKET_UPDATE_TICKS 1
+#define TICKET_DEBUG 1        // * indicates whether to print debug page infos
+#define TICKET_UPDATE_TICKS 1 // * indicates on which ticks to run the update_tickets() - now on all
 
 static void
-update_tickets(struct proc *p)
+update_tickets(struct proc *p) // * update_tickets() function to go through the page table and update tickets
 {
   pte_t *pte;
   pde_t *pgdir;
@@ -50,19 +50,19 @@ update_tickets(struct proc *p)
   if (p == 0 || p->pgdir == 0 || p->sz == 0)
     return;
 
-  pgdir = p->pgdir;
+  pgdir = p->pgdir; // * access process's page table
   for (uint va = 0; va < p->sz; va += PGSIZE)
   {
-    pte = uva2pte(pgdir, va);
+    pte = uva2pte(pgdir, va); // * get page table entry from virtual address (get the nth page table entry)
     if (pte == 0)
       continue;
-    if (!(*pte & PTE_P) || (*pte & PTE_SWAPPED))
+    if (!(*pte & PTE_P) || (*pte & PTE_SWAPPED)) // * skip if not present or swapped
       continue;
 
     pa = PTE_ADDR(*pte);
     if (pa >= PHYSTOP)
       continue;
-    idx = pa / PGSIZE;
+    idx = pa / PGSIZE; // * get the frame address and calculate metadata index from it
 
     tickets = metadata[idx].tickets;
     accessed = ((*pte & PTE_A) != 0);
@@ -78,18 +78,18 @@ update_tickets(struct proc *p)
       if (tickets < 10)
         tickets = 10;
     }
-    metadata[idx].tickets = tickets;
+    metadata[idx].tickets = tickets; // * calculate and update tickets (if it's accessed plus 10 with the ceil of 500 and if not minus 5 with the floor of 10)
     if (TICKET_DEBUG && printed < 10)
     {
       cprintf("page 0x%x : tickets=%d, accessed=%d\n", va, tickets, accessed);
       printed++;
-    }
+    } // * print debug info if it's among the first 10 pages that we are looping
     *pte &= ~PTE_A;
     cleared = 1;
   }
 
   if (cleared)
-    lcr3(V2P(pgdir)); // TLB flush
+    lcr3(V2P(pgdir)); // * TLB flush if at least one PTE_A is cleared
 }
 // ! end LOTTERYVM
 
@@ -130,7 +130,7 @@ void trap(struct trapframe *tf)
         if (t - last_update_ticks >= TICKET_UPDATE_TICKS)
         {
           last_update_ticks = t;
-          update_tickets(myproc());
+          update_tickets(myproc()); // * run update_tickets every TICKET_UPDATE_TICKS ticks
         }
       }
       // ! end LOTTERYVM

@@ -323,12 +323,14 @@ ii) if (i) is unable to find any such page, randomly reset access bit
     of 10% of the allocated pages and call select_a_victim() again
 */
 
-#define LOTTERY_WEIGHT_SCALE 100000
+// ! LOTTERYVM
 
-static uint lottery_state;
+#define LOTTERY_WEIGHT_SCALE 100000 // * big number to divide tickets from
+
+static uint lottery_state; // * used as a seed for random number generation
 
 static uint
-lottery_rand(uint max)
+lottery_rand(uint max) // * generates random numbers by updating lottery_state by multiplying it by some big numbers and also some addition (at first lottery_state is the system ticks) and then returning it's remainder to the desired max - this causes different number everytime (not a well distributed random function just a simple one)
 {
   if (max == 0)
     return 0;
@@ -339,7 +341,7 @@ lottery_rand(uint max)
 }
 
 pte_t *
-select_a_victim(pde_t *pgdir)
+select_a_victim(pde_t *pgdir) // * this function has 3 implementations and we can switch between them by changing the commented code
 {
   // ! Existing Second Chance:
   /*
@@ -374,6 +376,7 @@ select_a_victim(pde_t *pgdir)
   // ! end Existing Second Chance
 
   // ! FIFO:
+  // * simple implementation using alloc_seq (we iterate through pages and select the present and not swapped page with the oldest alloc_seq)
   /*
   pte_t *pte;
   pte_t *victim = 0;
@@ -415,7 +418,7 @@ select_a_victim(pde_t *pgdir)
   uint total_weight = 0;
   uint draw;
 
-  for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE)
+  for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE) // * iterate through pages and calculate total weight
   {
     pte = walkpgdir(pgdir, (char *)va, 0);
     if (pte == 0)
@@ -438,8 +441,8 @@ select_a_victim(pde_t *pgdir)
   if (total_weight == 0)
     return 0;
 
-  draw = lottery_rand(total_weight);
-  for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE)
+  draw = lottery_rand(total_weight);                  // * draw a random number
+  for (uint va = PGSIZE; va < KERNBASE; va += PGSIZE) // * iterate again - calculate weights again - see which page should be selected based on draw
   {
     pte = walkpgdir(pgdir, (char *)va, 0);
     if (pte == 0)
@@ -463,6 +466,8 @@ select_a_victim(pde_t *pgdir)
 
   return 0;
 }
+
+// ! end LOTTERYVM
 
 // Clear access bit of a random pte.
 void clearaccessbit(pde_t *pgdir)

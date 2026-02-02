@@ -10,12 +10,15 @@
 #include "paging.h"
 #include "fs.h"
 
+// ! LOTTERYVM
+// * make debug prints controllable for a cleaner setup
 #define PAGING_DEBUG 0
 #if PAGING_DEBUG
 #define PGDBG cprintf
 #else
 #define PGDBG(...) ((void)0)
 #endif
+// ! end LOTTERYVM
 
 static pte_t *walkpgdir(pde_t *pgdir, const void *va, int alloc);
 int deallocuvmXV7(pde_t *pgdir, uint oldsz, uint newsz);
@@ -178,7 +181,7 @@ void handle_pgfault()
   unsigned addr;
   struct proc *curproc = myprocXV7();
 
-  total_page_faults++;
+  total_page_faults++; // ! LOTTERYVM
 
   asm volatile("movl %%cr2, %0 \n\t" : "=r"(addr));
   addr &= ~0xfff;

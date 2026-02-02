@@ -31,4 +31,4 @@ SYSCALL(sleep)
 SYSCALL(uptime)
 SYSCALL(bstat)
 SYSCALL(swap)
-SYSCALL(get_faults)
+SYSCALL(get_faults) // ! LOTTERYVM

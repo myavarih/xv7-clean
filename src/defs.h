@@ -70,7 +70,7 @@ void kinit1(void *, void *);
 void kinit2(void *, void *);
 
 // ! LOTTERYVM
-struct core_map
+struct core_map // * definition of core_map
 {
   int tickets;
   uint alloc_seq;

@@ -519,8 +519,9 @@ int sys_swap(void)
   return 0;
 }
 
-// return the total page faults since boot.
+// ! LOTTERYVM
+// * get total faults system call
 int sys_get_faults(void)
 {
-  return total_page_faults;
+  return total_page_faults; // * incremented in handle_pgfault() in paging.c
 }

@@ -19,11 +19,10 @@ struct run
 };
 
 // ! LOTTERYVM:
-#define NPHYS_PAGES (PHYSTOP / PGSIZE)
-struct core_map metadata[NPHYS_PAGES];
-static uint alloc_seq;
-int total_page_faults;
-
+#define NPHYS_PAGES (PHYSTOP / PGSIZE) // * number of physical pages
+struct core_map metadata[NPHYS_PAGES]; // * an array of all core_maps for all physical pages
+static uint alloc_seq;                 // * alloc_seq in used in FIFO
+int total_page_faults;                 // * declared here but updated in paging.c when a fault occurs and used in syscall
 // ! end LOTTERYVM
 struct
 {
@@ -75,9 +74,11 @@ void kfree(char *v)
 
   if (kmem.use_lock)
     acquire(&kmem.lock);
-  idx = V2P(v) / PGSIZE;
-  metadata[idx].tickets = 0;
+  // ! LOTTERYVM
+  idx = V2P(v) / PGSIZE;     // * VTP coverts virtual address to physical address and then when we divide by page size we get the frame number
+  metadata[idx].tickets = 0; // * we reset the tickets and alloc_seq of the freed frame
   metadata[idx].alloc_seq = 0;
+  // ! end LOTTERYVM
   r = (struct run *)v;
   r->next = kmem.freelist;
   kmem.freelist = r;
@@ -100,10 +101,12 @@ kalloc(void)
   if (r)
   {
     kmem.freelist = r->next;
+    // ! LOTTERYVM
     idx = V2P(r) / PGSIZE;
-    metadata[idx].tickets = 10; // ! LOTTERYVM
+    metadata[idx].tickets = 10;
     alloc_seq++;
-    metadata[idx].alloc_seq = alloc_seq;
+    metadata[idx].alloc_seq = alloc_seq; // * we initialize tickets to 10 and set alloc_seq
+    // ! end LOTTERYVM
   }
   if (kmem.use_lock)
     release(&kmem.lock);
