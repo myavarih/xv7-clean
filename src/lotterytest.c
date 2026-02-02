@@ -2,21 +2,24 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "fs.h"
+#include "fcntl.h"
+#include "syscall.h"
+#include "traps.h"
 #include "memlayout.h"
 
 #define PGSIZE 4096
-#define TARGET_BYTES (PHYSTOP / 8)
-#define TOTAL_PAGES (TARGET_BYTES / PGSIZE)
+#define TOTAL_PAGES 700
 #define HOT_PERCENT 10
-#define ITERATIONS 100
-#define ACCESSES_PER_ITER TOTAL_PAGES
+#define ITERATIONS 1000
+#define ACCESSES_PER_ITER (TOTAL_PAGES * 2)
 
-static char *pages[TOTAL_PAGES];
 static uint randstate;
 
 static uint
 prand(void)
 {
+  randstate = uptime();
   if (randstate == 0)
     randstate = 1;
   randstate = randstate * 1664525 + 1013904223;
@@ -25,8 +28,8 @@ prand(void)
 
 int main(int argc, char *argv[])
 {
-  char *base;
-  // uint i;
+  char *pages[TOTAL_PAGES];
+  uint i;
   uint hot_pages;
   uint cold_pages;
   uint iter;
@@ -38,27 +41,21 @@ int main(int argc, char *argv[])
   int start_faults;
   int last_faults;
 
-  printf(1, "lotterytest: %d pages (%d bytes)\n", TOTAL_PAGES, TARGET_BYTES);
+  printf(1, "lotterytest: %d pages\n", TOTAL_PAGES);
 
-  base = sbrk(TARGET_BYTES);
-  if (base == (char *)-1)
+  for (i = 0; i < TOTAL_PAGES; i++)
   {
-    printf(1, "sbrk failed\n");
-    exit();
+    pages[i] = malloc(PGSIZE);
+    if (pages[i] == 0)
+      goto failed;
+    pages[i][0] = (char)i;
+    pages[i][PGSIZE - 1] = (char)(i ^ 0x5a);
   }
-
-  // for (i = 0; i < TOTAL_PAGES; i++)
-  // {
-  //   printf(1, "i: %d\n", i);
-  //   pages[i] = base + (i * PGSIZE);
-  //   pages[i][0] = (char)i;
-  // }
 
   hot_pages = TOTAL_PAGES / HOT_PERCENT;
   if (hot_pages < 1)
     hot_pages = 1;
   cold_pages = TOTAL_PAGES - hot_pages;
-  randstate = uptime();
 
   start_faults = get_faults();
   last_faults = start_faults;
@@ -76,7 +73,7 @@ int main(int argc, char *argv[])
       else
         idx = hot_pages + (r % cold_pages);
 
-      pages[idx][0] = pages[idx][0] + 1;
+      pages[idx][0] ^= 1;
       sum += pages[idx][0];
     }
 
@@ -92,5 +89,9 @@ int main(int argc, char *argv[])
   faults = get_faults();
   printf(1, "done: sum=%d faults=%d (since start +%d)\n",
          sum, faults, faults - start_faults);
+  exit();
+
+failed:
+  printf(1, "test failed!\n");
   exit();
 }
